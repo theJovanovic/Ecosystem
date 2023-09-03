@@ -39,7 +39,8 @@ body {
     right: 0;
     background-color: rgb(190, 190, 190);
     border: 1px solid black;
-    box-shadow: -3px 3px 10px black;
+    box-shadow: -3px 3px 10px rgba(0, 0, 0, 0.3);
+    border-bottom-left-radius: 1em;
 }
 
 #settingsPanel {
