@@ -1,0 +1,154 @@
+<html lang="en">
+
+<head>
+    <title>Document</title>
+    <link rel="stylesheet" href="./src/styles/style.css">
+
+<body>
+
+    <div id="mainDiv">
+
+        <div id="canvasDiv">
+
+            <div style="display: flex; flex-direction: column;">
+                <!-- canvas panel -->
+                <canvas id="ecosystemCanvas" width="1920" height="1000"></canvas>
+                <div id="infoDiv">
+                    <div id="animalCount"></div>
+                    <div id="offspringCount"></div>
+                    <div id="deceasedCount"></div>
+                </div>
+            </div>
+
+            <!-- settings panel -->
+            <div id="settingsPanel">
+                <div id="leftSettingsSide">
+                    <label>
+                        # plants:
+                        <input type="number" id="plantCountInput" value="100">
+                    </label>
+                    <label>
+                        # rabbits:
+                        <input type="number" id="rabbitCountInput" value="100">
+                    </label>
+                    <label>
+                        # foxes:
+                        <input type="number" id="foxCountInput" value="100">
+                    </label>
+                    <br>
+                    <label>
+                        Plant size:
+                        <input type="number" id="plantSizeInput" value="3">
+                    </label>
+                    <label>
+                        Rabbit size:
+                        <input type="number" id="rabbitSizeInput" value="3">
+                    </label>
+                    <label>
+                        Fox size:
+                        <input type="number" id="foxSizeInput" value="5">
+                    </label>
+                    <br>
+                    <label>
+                        <span id="simulationSpeedSpan">Simulation speed (24fps):</span><br>
+                        <input style="width: 22ch;" type="range" id="simulationSpeedInput" value="24" min="1" max="60"
+                            step="1" />
+                    </label>
+                </div>
+
+                <div id="leftSettingsSide">
+                    <label>
+                        Rabbit age adjustment:
+                        <input type="number" id="rabbitAgeAdjustmentInput" value="0.0027" />
+                    </label>
+                    <label>
+                        Rabbit energy adjustment:
+                        <input type="number" id="rabbitEnergyAdjustmentInput" value="-0.1" />
+                    </label>
+                    <label>
+                        Rabbit max energy adjustment:
+                        <input type="number" id="rabbitMaxEnergyAdjustmentInput" value="0.015" />
+                    </label>
+                    <label>
+                        Rabbit proximity check:
+                        <input type="number" id="rabbitProximityCheckInput" value="20" />
+                    </label>
+                    <br>
+                    <label>
+                        Fox age adjustment:
+                        <input type="number" id="foxAgeAdjustmentInput" value="0.0027" />
+                    </label>
+                    <label>
+                        Fox energy adjustment:
+                        <input type="number" id="foxEnergyAdjustmentInput" value="-0.1" />
+                    </label>
+                    <label>
+                        Fox max energy adjustment:
+                        <input type="number" id="foxMaxEnergyAdjustmentInput" value="0.015" />
+                    </label>
+                    <label>
+                        Fox proximity check:
+                        <input type="number" id="foxProximityCheckInput" value="30" />
+                    </label>
+                    <br>
+                    <label>
+                        Plant min generator interval:
+                        <input type="number" id="plantMinGeneratorIntervalInput" value="0" />
+                    </label>
+                    <label>
+                        Plant max generator interval:
+                        <input type="number" id="plantMaxGeneratorIntervalInput" value="250" />
+                    </label>
+                </div>
+            </div>
+
+            <!-- graph panel -->
+            <div id="graphPanel">
+                <div>
+                    <div id="graph">
+                        <div class="graphBar" id="plantGraph"></div>
+                        <div class="graphBar">
+                            <div id="rabbitGraphMale"></div>
+                            <div id="rabbitGraphFemale"></div>
+                        </div>
+                        <div class="graphBar">
+                            <div id="foxGraphMale"></div>
+                            <div id="foxGraphFemale"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-around;">
+                        <span>Plants</span>
+                        <span>Rabbits</span>
+                        <span>Foxes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="sideDiv">
+            <!-- settings button -->
+            <button id="settingsBtn" class="side-btn">
+                <span style="font-size: 3em;">🛠️</span>
+            </button>
+
+            <!-- graph button -->
+            <button id="graphBtn" class="side-btn">
+                <span style="font-size: 3em;">📊</span>
+            </button>
+
+            <!-- start button -->
+            <button id="startBtn" class="side-btn">
+                <span style="font-size: 3em;">▶️</span>
+            </button>
+
+            <!-- stop button -->
+            <button id="stopBtn" class="side-btn">
+                <span style="font-size: 3em;">⏹️</span>
+            </button>
+        </div>
+    </div>
+    
+    <script src="./dist/bundle.js"></script>
+</body>
+
+</html>

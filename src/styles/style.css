@@ -1,0 +1,115 @@
+body {
+    padding: 0;
+    margin: 0;
+}
+
+#mainDiv {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+}
+
+#canvasDiv {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#infoDiv {
+    font-size: larger;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    margin-right: 0.5em;
+    margin-bottom: 0.5em;
+    text-align: end;
+}
+
+#ecosystemCanvas {
+    width: 100%;
+    height: 100%;
+}
+
+#settingsPanel, #graphPanel {
+    display: none;
+    position: absolute;
+    padding: 1.5em;
+    top: 0;
+    right: 0;
+    background-color: rgb(190, 190, 190);
+    border: 1px solid black;
+    box-shadow: -3px 3px 10px black;
+}
+
+#settingsPanel {
+    flex-direction: row;
+}
+
+#graphPanel {
+    height: 350px;
+}
+
+#leftSettingsSide {
+    margin-right: 1em;
+}
+
+#leftSettingsSide, #rightSettingsSide {
+    display: flex;
+    flex-direction: column;
+    text-align: end;
+}
+
+#sideDiv {
+    background-color: rgb(70, 70, 70);
+    display: flex;
+    flex-direction: column;
+}
+
+button {
+    padding: 0;
+    margin: 0;
+}
+
+.side-btn {
+    background-color: transparent;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.side-btn:active {
+    background-color: rgb(100, 100, 100);
+} 
+
+#graph {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    justify-content: center;
+    align-items: end;
+}
+
+.graphBar {
+    width: 100px;
+    max-height: 350px;
+    border: 1px solid black;
+}
+
+#plantGraph {
+    background-color: lightgreen;
+}
+
+#rabbitGraphMale {
+    background-color: blue;
+}
+#rabbitGraphFemale {
+    background-color: lightblue;
+}
+
+#foxGraphMale {
+    background-color: red;
+}
+#foxGraphFemale {
+    background-color: lightcoral;
+}
