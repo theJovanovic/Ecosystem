@@ -12,16 +12,19 @@
 
             <div style="display: flex; flex-direction: column;">
                 <!-- canvas panel -->
-                <canvas id="ecosystemCanvas" width="1920" height="1000"></canvas>
+                <canvas id="ecosystemCanvas" width="2400" height="1231"></canvas>
+
+                <!-- counts div -->
                 <div id="infoDiv">
                     <div id="animalCount"></div>
                     <div id="offspringCount"></div>
                     <div id="deceasedCount"></div>
                 </div>
+
             </div>
 
             <!-- settings panel -->
-            <div id="settingsPanel">
+            <div class="panel" id="settingsPanel">
                 <div id="leftSettingsSide">
                     <label>
                         # plants:
@@ -103,7 +106,7 @@
             </div>
 
             <!-- graph panel -->
-            <div id="graphPanel">
+            <div class="panel" id="graphPanel">
                 <div>
                     <div id="graph">
                         <div class="graphBar" id="plantGraph"></div>
@@ -143,11 +146,11 @@
 
             <!-- stop button -->
             <button id="pauseBtn" class="side-btn">
-                <span style="font-size: 3em;">⏹️</span>
+                <span style="font-size: 3em;">⏸️</span>
             </button>
         </div>
     </div>
-    
+
     <script src="./dist/bundle.js"></script>
 </body>
 

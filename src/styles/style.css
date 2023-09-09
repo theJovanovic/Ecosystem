@@ -31,7 +31,7 @@ body {
     height: 100%;
 }
 
-#settingsPanel, #graphPanel {
+.panel {
     display: none;
     position: absolute;
     padding: 1.5em;

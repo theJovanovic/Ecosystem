@@ -68,7 +68,6 @@ getInputStream('simulationSpeedInput').pipe(
   tap((value: number) => (document.getElementById('simulationSpeedSpan') as HTMLInputElement).innerText = `Simulation speed (${value}fps):`),
   map((fps: number) => Math.ceil(1000 / fps)),
   tap((value: number) => {
-    console.log(value)
     simulationSpeedSubject.next(value)
   })
 ).subscribe()

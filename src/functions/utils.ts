@@ -33,3 +33,20 @@ export function getInputStream(id: string): Observable<number> {
 export function getButtonInputStream(id: string): Observable<Event> {
     return fromEvent(document.getElementById(id), 'click')
 }
+
+export function isPointInEntity(clickX: number, clickY: number, animal: Animal) {
+    const dx = clickX - animal.x
+    const dy = clickY - animal.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    const result = distance <= animal.sizeRadius
+    return result
+}
+
+export function getRelativeMousePos(evt: MouseEvent) {
+    const rect = Canvas.canvas.getBoundingClientRect()
+    const scaleX = rect.width / Canvas.canvas.width
+    const scaleY = rect.height / Canvas.canvas.height
+    const x = (evt.clientX - rect.left) / scaleX
+    const y = (evt.clientY - rect.top) / scaleY
+    return { x, y }
+}

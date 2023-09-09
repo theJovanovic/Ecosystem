@@ -4,11 +4,12 @@ import {
   Observable,
   Subject,
   combineLatest,
+  fromEvent,
   interval,
   timer,
   withLatestFrom
 } from "rxjs"
-import { switchMap, tap, map, scan, startWith } from "rxjs/operators"
+import { switchMap, tap, map, scan, startWith, filter } from "rxjs/operators"
 import Fox from "../models/Fox"
 import Plant from "../models/Plant"
 import Rabbit from "../models/Rabbit"
@@ -16,15 +17,15 @@ import SimulationSubscriptions from "../models/SimulationSubscriptions"
 import Canvas from "../models/Canvas"
 import Entity from "../models/Entity"
 import Parameter from "../models/Parameter"
-import { generateRandomEntities, getSexCount } from "../functions/utils"
+import { generateRandomEntities, getRelativeMousePos, getSexCount, isPointInEntity } from "../functions/utils"
 
 // offsprings
 const plantOffspringsSubject = new Subject<number>()
 const rabbitOffspringsSubject = new Subject<number>()
 const foxOffspringsSubject = new Subject<number>()
-const plantOffspring$ = plantOffspringsSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
-const rabbitOffspring$ = rabbitOffspringsSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
-const foxOffspring$ = foxOffspringsSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
+const plantOffsprings$ = plantOffspringsSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
+const rabbitOffsprings$ = rabbitOffspringsSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
+const foxOffsprings$ = foxOffspringsSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
 
 // deceased
 const plantDeceasedSubject = new Subject<number>()
@@ -34,32 +35,32 @@ const plantDeceased$ = plantDeceasedSubject.pipe(scan((acc, curr) => acc + curr,
 const rabbitDeceased$ = rabbitDeceasedSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
 const foxDeceased$ = foxDeceasedSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
 
-function handleRandomPlantGenerator(plantsSubject: BehaviorSubject<Plant[]>, simulationState$: Observable<boolean>): Observable<void> {
+function handleRandomPlantGenerator(plantsSubject: BehaviorSubject<Plant[]>, simulationStates$: Observable<boolean>): Observable<void> {
   const canvasWidth = Canvas.canvas.width
   const canvasHeight = Canvas.canvas.height
 
   return combineLatest([
-    simulationState$,
+    simulationStates$,
     timer(0)
-]).pipe(
-  switchMap(([isRunning]) => {
-    if (isRunning) {
-      const randomTime = Math.random() * (Parameter.getInstance().plantMaxGeneratorInterval - Parameter.getInstance().plantMinGeneratorInterval) + Parameter.getInstance().plantMinGeneratorInterval;
-      return timer(randomTime).pipe(
-        tap(() => {
-          const newPlant = new Plant(Math.random() * canvasWidth, Math.random() * canvasHeight)
-          const currentPlants = plantsSubject.getValue()
-          currentPlants.push(newPlant)
-          plantsSubject.next(currentPlants)
-          plantOffspringsSubject.next(1)
-        }),
-        switchMap(() => handleRandomPlantGenerator(plantsSubject, simulationState$))
-      );
-    } else {
-      return EMPTY
-    }
-  })
-);
+  ]).pipe(
+    switchMap(([isRunning]) => {
+      if (isRunning) {
+        const randomTime = Math.random() * (Parameter.getInstance().plantMaxGeneratorInterval - Parameter.getInstance().plantMinGeneratorInterval) + Parameter.getInstance().plantMinGeneratorInterval
+        return timer(randomTime).pipe(
+          tap(() => {
+            const newPlant = new Plant(Math.random() * canvasWidth, Math.random() * canvasHeight)
+            const currentPlants = plantsSubject.getValue()
+            currentPlants.push(newPlant)
+            plantsSubject.next(currentPlants)
+            plantOffspringsSubject.next(1)
+          }),
+          switchMap(() => handleRandomPlantGenerator(plantsSubject, simulationStates$))
+        )
+      } else {
+        return EMPTY
+      }
+    })
+  )
 }
 
 function handleAnimalMovements(
@@ -163,15 +164,15 @@ function processFoxes(foxes: Fox[], rabbits: Rabbit[]): Fox[] {
 
 export default function startSimulation(plantsCount: number, rabbitsCount: number, foxesCount: number, simulationSpeedSubject: Observable<number>, simulationStateSubject: Observable<boolean>) {
 
-  const frame$ = combineLatest([simulationSpeedSubject, simulationStateSubject]).pipe(
+  const frames$ = combineLatest([simulationSpeedSubject, simulationStateSubject]).pipe(
     switchMap(([speed, isRunning]) => {
       if (isRunning) {
-        return interval(speed);
+        return interval(speed)
       } else {
-        return EMPTY;
+        return EMPTY
       }
     })
-  );
+  )
 
   const plants = generateRandomEntities(plantsCount, () => new Plant(Math.random() * Canvas.canvas.width, Math.random() * Canvas.canvas.height))
   const rabbits = generateRandomEntities(rabbitsCount, () => new Rabbit(Math.random() * Canvas.canvas.width, Math.random() * Canvas.canvas.height, false))
@@ -191,7 +192,6 @@ export default function startSimulation(plantsCount: number, rabbitsCount: numbe
   const animalCountSubscription = combineLatest([plantsSubject, rabbitsSubject, foxesSubject])
     .pipe(
       map(([plants, rabbits, foxes]) => {
-
         const [rabbitMaleCount, rabbitFemaleCount] = getSexCount(rabbits)
         const [foxMaleCount, foxFemaleCount] = getSexCount(foxes)
 
@@ -232,7 +232,7 @@ export default function startSimulation(plantsCount: number, rabbitsCount: numbe
     ).subscribe()
   SimulationSubscriptions.addSubscription(animalCountSubscription)
 
-  const offspringsSubscription = combineLatest([plantOffspring$, rabbitOffspring$, foxOffspring$]).pipe(
+  const offspringsSubscription = combineLatest([plantOffsprings$, rabbitOffsprings$, foxOffsprings$]).pipe(
     tap(([plantOffsprings, rabbitOffsprings, foxOffsprings]) => {
       const offspringCountDiv: HTMLElement = document.getElementById('offspringCount')
       offspringCountDiv.innerHTML = `New plants: ${plantOffsprings} | New rabbits: ${rabbitOffsprings} | New foxes: ${foxOffsprings}`
@@ -251,11 +251,33 @@ export default function startSimulation(plantsCount: number, rabbitsCount: numbe
   const randomPlantGeneratorSubscription = handleRandomPlantGenerator(plantsSubject, simulationStateSubject).subscribe()
   SimulationSubscriptions.addSubscription(randomPlantGeneratorSubscription)
 
-  const animalMovement$ = handleAnimalMovements(frame$, plantsSubject, rabbitsSubject, foxesSubject)
-  const animalMovementsSubscription = animalMovement$.subscribe()
+  const animalMovements$ = handleAnimalMovements(frames$, plantsSubject, rabbitsSubject, foxesSubject)
+  const animalMovementsSubscription = animalMovements$.subscribe()
   SimulationSubscriptions.addSubscription(animalMovementsSubscription)
 
-  const render$ = animalMovement$.pipe(
+  const canvasClicks$ = fromEvent(Canvas.canvas, 'click').pipe(
+    map((event: MouseEvent) => getRelativeMousePos(event)),
+    withLatestFrom(combineLatest([rabbitsSubject, foxesSubject])),
+    map(([click, [rabbits, foxes]]) => {
+      const clickedRabbit = rabbits.find(rabbit => isPointInEntity(click.x, click.y, rabbit))
+      const clickedFox = foxes.find(fox => isPointInEntity(click.x, click.y, fox))
+      return clickedRabbit || clickedFox
+    }),
+    filter(entity => !!entity)
+  )
+  const showAgeSubscription = canvasClicks$.subscribe(animal => {
+    const animalSpecies = animal instanceof Fox ? "FOX" : "RABBIT"
+    alert(`
+      ${animalSpecies}\n
+      Sex: ${animal.sex ? "male" : "female"}\n
+      Age: ${animal.age}\n
+      Energy: ${animal.energy}\n
+      Max energy: ${animal.maxEnergy}
+    `)
+  })
+  SimulationSubscriptions.addSubscription(showAgeSubscription)
+
+  const renders$ = animalMovements$.pipe(
     tap(([plants, rabbits, foxes]) => {
       Canvas.fillBackground('lightgreen')
       plants.forEach(plant => plant.draw(Canvas.ctx))
@@ -263,6 +285,6 @@ export default function startSimulation(plantsCount: number, rabbitsCount: numbe
       foxes.forEach(fox => fox.draw(Canvas.ctx))
     })
   )
-  const renderSubscription = render$.subscribe()
+  const renderSubscription = renders$.subscribe()
   SimulationSubscriptions.addSubscription(renderSubscription)
 }
