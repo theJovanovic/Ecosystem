@@ -1,6 +1,6 @@
 import { tap } from "rxjs"
-import { getInputStream } from "../functions/utils"
 import Entity from "./Entity"
+import { getInputStream } from "../utils/observables"
 
 class Plant extends Entity {
 

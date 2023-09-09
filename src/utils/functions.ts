@@ -1,4 +1,3 @@
-import { Observable, fromEvent, map, startWith } from "rxjs"
 import Animal from "../models/Animal"
 import Canvas from "../models/Canvas"
 
@@ -21,17 +20,6 @@ export function getSexCount(population: Animal[]) {
         populationFemaleCount = 350 - populationMaleCount
     }
     return [populationMaleCount, populationFemaleCount]
-}
-
-export function getInputStream(id: string): Observable<number> {
-    return fromEvent(document.getElementById(id), 'input').pipe(
-        map((e: any) => parseInt(e.target.value)),
-        startWith(parseFloat((document.getElementById(id) as HTMLInputElement).value))
-    )
-}
-
-export function getButtonInputStream(id: string): Observable<Event> {
-    return fromEvent(document.getElementById(id), 'click')
 }
 
 export function isPointInEntity(clickX: number, clickY: number, animal: Animal) {

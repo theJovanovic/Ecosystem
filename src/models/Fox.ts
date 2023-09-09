@@ -1,7 +1,7 @@
 import { tap } from "rxjs"
 import Animal from "./Animal"
 import Carnivore from "./Carnivore"
-import { getInputStream } from "../functions/utils"
+import { getInputStream } from "../utils/observables"
 
 
 class Fox extends Carnivore {

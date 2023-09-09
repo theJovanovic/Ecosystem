@@ -1,4 +1,4 @@
-import { getRandomInRange } from "../functions/utils"
+import { getRandomInRange } from "../utils/functions"
 import Canvas from "./Canvas"
 import Entity from "./Entity"
 

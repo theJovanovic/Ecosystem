@@ -4,20 +4,16 @@ import {
   Observable,
   Subject,
   combineLatest,
-  fromEvent,
-  interval,
-  timer,
-  withLatestFrom
+  interval
 } from "rxjs"
-import { switchMap, tap, map, scan, startWith, filter } from "rxjs/operators"
+import { switchMap, tap, map, scan, startWith } from "rxjs/operators"
 import Fox from "../models/Fox"
 import Plant from "../models/Plant"
 import Rabbit from "../models/Rabbit"
 import SimulationSubscriptions from "../models/SimulationSubscriptions"
+import { generateRandomEntities, getSexCount } from "../utils/functions"
+import { getAnimalMovements$, getCanvasClicks$, handleRandomPlantGenerator } from "../utils/observables"
 import Canvas from "../models/Canvas"
-import Entity from "../models/Entity"
-import Parameter from "../models/Parameter"
-import { generateRandomEntities, getRelativeMousePos, getSexCount, isPointInEntity } from "../functions/utils"
 
 // offsprings
 const plantOffspringsSubject = new Subject<number>()
@@ -34,133 +30,6 @@ const foxDeceasedSubject = new Subject<number>()
 const plantDeceased$ = plantDeceasedSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
 const rabbitDeceased$ = rabbitDeceasedSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
 const foxDeceased$ = foxDeceasedSubject.pipe(scan((acc, curr) => acc + curr, 0), startWith(0))
-
-function handleRandomPlantGenerator(plantsSubject: BehaviorSubject<Plant[]>, simulationStates$: Observable<boolean>): Observable<void> {
-  const canvasWidth = Canvas.canvas.width
-  const canvasHeight = Canvas.canvas.height
-
-  return combineLatest([
-    simulationStates$,
-    timer(0)
-  ]).pipe(
-    switchMap(([isRunning]) => {
-      if (isRunning) {
-        const randomTime = Math.random() * (Parameter.getInstance().plantMaxGeneratorInterval - Parameter.getInstance().plantMinGeneratorInterval) + Parameter.getInstance().plantMinGeneratorInterval
-        return timer(randomTime).pipe(
-          tap(() => {
-            const newPlant = new Plant(Math.random() * canvasWidth, Math.random() * canvasHeight)
-            const currentPlants = plantsSubject.getValue()
-            currentPlants.push(newPlant)
-            plantsSubject.next(currentPlants)
-            plantOffspringsSubject.next(1)
-          }),
-          switchMap(() => handleRandomPlantGenerator(plantsSubject, simulationStates$))
-        )
-      } else {
-        return EMPTY
-      }
-    })
-  )
-}
-
-function handleAnimalMovements(
-  frame$: Observable<number>,
-  plantsSubject: BehaviorSubject<Plant[]>,
-  rabbitsSubject: BehaviorSubject<Rabbit[]>,
-  foxesSubject: BehaviorSubject<Fox[]>): Observable<[Plant[], Rabbit[], Fox[]]> {
-  return frame$.pipe(
-    withLatestFrom(combineLatest([plantsSubject, rabbitsSubject, foxesSubject])),
-    map(([_, [plants, rabbits, foxes]]) => {
-      const newRabbits = processRabbits(rabbits, plants)
-      const newFoxes = processFoxes(foxes, newRabbits)
-
-      rabbitsSubject.next(newRabbits)
-      foxesSubject.next(newFoxes)
-
-      return [plants, newRabbits, newFoxes]
-    })
-  )
-}
-
-function processRabbits(rabbits: Rabbit[], plants: Plant[]): Rabbit[] {
-  const rabbitOffsprings: Rabbit[] = []
-  rabbits.forEach(rabbit => {
-    rabbit.move()
-    rabbit.adjustEnergy(Parameter.getInstance().rabbitEnergyAdjustment)
-
-    if (rabbit.isHungry()) {
-      const indexToEat = plants.findIndex(plant => Entity.areNear(rabbit, plant, Parameter.getInstance().rabbitProximityCheck))
-      if (indexToEat !== -1) {
-        // console.log('plant is eaten')
-        plants.splice(indexToEat, 1)
-        rabbit.adjustEnergy(20)
-        plantDeceasedSubject.next(1)
-      }
-    }
-
-    const indexToMate = rabbits.findIndex(otherRabbit =>
-      (rabbit.sex !== otherRabbit.sex) &&
-      (rabbit !== otherRabbit) &&
-      Entity.areNear(rabbit, otherRabbit, Parameter.getInstance().rabbitProximityCheck + otherRabbit.sizeRadius) &&
-      rabbit.canMate() &&
-      otherRabbit.canMate())
-    if (indexToMate !== -1) {
-      // console.log('rabbit is born')
-      const matingRabbit = rabbits[indexToMate]
-      const rabbitOffspring = rabbit.mate(matingRabbit)
-      rabbitOffsprings.push(rabbitOffspring)
-      rabbitOffspringsSubject.next(1)
-    }
-
-    rabbit.growOlder(Parameter.getInstance().rabbitAgeAdjustment, Parameter.getInstance().rabbitMaxEnergyAdjustment)
-  })
-
-  const newRabbits = [...rabbits, ...rabbitOffsprings]
-  const filteredRabbits = newRabbits.filter(rabbit => !rabbit.isDead() && !rabbit.isStarving())
-  rabbitDeceasedSubject.next(newRabbits.length - filteredRabbits.length)
-
-  return filteredRabbits
-}
-
-function processFoxes(foxes: Fox[], rabbits: Rabbit[]): Fox[] {
-  const foxOffsprings: Fox[] = []
-  foxes.forEach(fox => {
-    fox.move()
-    fox.adjustEnergy(Parameter.getInstance().foxEnergyAdjustment)
-
-    if (fox.isHungry()) {
-      const indexToEat = rabbits.findIndex(rabbit => Entity.areNear(fox, rabbit, Parameter.getInstance().foxProximityCheck + rabbit.sizeRadius))
-      if (indexToEat !== -1) {
-        // console.log('rabbit is eaten')
-        rabbits.splice(indexToEat, 1)
-        fox.adjustEnergy(50)
-        rabbitDeceasedSubject.next(1)
-      }
-    }
-
-    const indexToMate = foxes.findIndex(otherFox =>
-      (fox.sex !== otherFox.sex) &&
-      (fox !== otherFox) &&
-      Entity.areNear(fox, otherFox, Parameter.getInstance().foxProximityCheck + otherFox.sizeRadius) &&
-      fox.canMate() &&
-      otherFox.canMate())
-    if (indexToMate !== -1) {
-      // console.log('fox is born')
-      const matingFox = foxes[indexToMate]
-      const foxOffspring = fox.mate(matingFox)
-      foxOffsprings.push(foxOffspring)
-      foxOffspringsSubject.next(1)
-    }
-
-    fox.growOlder(Parameter.getInstance().foxAgeAdjustment, Parameter.getInstance().foxMaxEnergyAdjustment)
-  })
-
-  const newFoxes = [...foxes, ...foxOffsprings]
-  const filteredFoxes = newFoxes.filter(fox => !fox.isDead() && !fox.isStarving())
-  foxDeceasedSubject.next(newFoxes.length - filteredFoxes.length)
-
-  return filteredFoxes
-}
 
 export default function startSimulation(plantsCount: number, rabbitsCount: number, foxesCount: number, simulationSpeedSubject: Observable<number>, simulationStateSubject: Observable<boolean>) {
 
@@ -248,34 +117,25 @@ export default function startSimulation(plantsCount: number, rabbitsCount: numbe
   ).subscribe()
   SimulationSubscriptions.addSubscription(deceasedSubscription)
 
-  const randomPlantGeneratorSubscription = handleRandomPlantGenerator(plantsSubject, simulationStateSubject).subscribe()
+  const randomPlantGeneratorSubscription = handleRandomPlantGenerator(plantsSubject, plantOffspringsSubject, simulationStateSubject).subscribe()
   SimulationSubscriptions.addSubscription(randomPlantGeneratorSubscription)
 
-  const animalMovements$ = handleAnimalMovements(frames$, plantsSubject, rabbitsSubject, foxesSubject)
+  const animalMovements$ = getAnimalMovements$(
+    frames$,
+    plantsSubject,
+    plantDeceasedSubject,
+    rabbitsSubject,
+    rabbitOffspringsSubject,
+    rabbitDeceasedSubject,
+    foxesSubject,
+    foxOffspringsSubject,
+    foxDeceasedSubject)
   const animalMovementsSubscription = animalMovements$.subscribe()
   SimulationSubscriptions.addSubscription(animalMovementsSubscription)
 
-  const canvasClicks$ = fromEvent(Canvas.canvas, 'click').pipe(
-    map((event: MouseEvent) => getRelativeMousePos(event)),
-    withLatestFrom(combineLatest([rabbitsSubject, foxesSubject])),
-    map(([click, [rabbits, foxes]]) => {
-      const clickedRabbit = rabbits.find(rabbit => isPointInEntity(click.x, click.y, rabbit))
-      const clickedFox = foxes.find(fox => isPointInEntity(click.x, click.y, fox))
-      return clickedRabbit || clickedFox
-    }),
-    filter(entity => !!entity)
-  )
-  const showAgeSubscription = canvasClicks$.subscribe(animal => {
-    const animalSpecies = animal instanceof Fox ? "FOX" : "RABBIT"
-    alert(`
-      ${animalSpecies}\n
-      Sex: ${animal.sex ? "male" : "female"}\n
-      Age: ${animal.age}\n
-      Energy: ${animal.energy}\n
-      Max energy: ${animal.maxEnergy}
-    `)
-  })
-  SimulationSubscriptions.addSubscription(showAgeSubscription)
+  const canvasClicks$ = getCanvasClicks$(rabbitsSubject, foxesSubject)
+  const canvasClicksSubscription = canvasClicks$.subscribe()
+  SimulationSubscriptions.addSubscription(canvasClicksSubscription)
 
   const renders$ = animalMovements$.pipe(
     tap(([plants, rabbits, foxes]) => {

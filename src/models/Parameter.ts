@@ -1,4 +1,4 @@
-import { getInputStream } from "../functions/utils"
+import { getInputStream } from "../utils/observables"
 
 export default class Parameter {
     private static instance: Parameter
