@@ -9,7 +9,6 @@ export default class SimulationSubscriptions {
     }
 
     static clearSubscriptions() {
-
         SimulationSubscriptions.subscriptions.forEach(sub => sub.unsubscribe())
         SimulationSubscriptions.subscriptions = []
     }
